@@ -1,27 +1,65 @@
-resource "openstack_networking_network_v2" "network_1" {
-  name           = "tf_test_network"
-  admin_state_up = "true"
-}
 
-resource "openstack_networking_subnet_v2" "subnet_1" {
-  network_id = openstack_networking_network_v2.network_1.id
-  cidr       = "10.0.0.0/24"
-  ip_version = 4
+module "network" {
+  source = "./modules/network"
 }
 
 
-resource "openstack_networking_router_v2" "router" {
-name = "myRouter"
-admin_state_up = true
+module "compute" {
+  source = "./modules/compute"
+
+ 
+  create_key         = var.create_key
+  key_name           = var.key_name
+  minikube_userdata  = var.minikube_userdata
+  bastion_userdata   = var.bastion_userdata
+
+  
+  bastion_priv_port      = module.network.bastion_priv_port
+  minikube_priv_port_id  = module.network.minikube_priv_port_id
+
+
+  instance_settings = var.instance_settings
+
+
+  bastion_fip = module.network.bastion_fip
 }
 
-resource "openstack_networking_port_v2" "port" {
-name           = "port_1"
-network_id     = openstack_networking_network_v2.network_1.id
-admin_state_up = "true"  
+
+resource "null_resource" "wait_for_bastion" {
+  depends_on = [module.compute.bastion_fip_association]
+
+  connection {
+    type        = "ssh"
+    host        = module.network.bastion_fip.address
+    user        = "ubuntu"
+    private_key = file("${var.key_name}.pem")
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "until [ -f /tmp/user_data_bastion_complete ]; do sleep 5; done",
+    ]
+  }
 }
 
-resource "openstack_networking_router_interface_v2" "if1" {
-  router_id = openstack_networking_router_v2.router_1.id
 
+resource "null_resource" "wait_for_minikube" {
+  depends_on = [null_resource.wait_for_bastion]
+
+  provisioner "local-exec" {
+    command = "ping 127.0.0.1 -n 6 > nul"
+  }
+
+  connection {
+    type        = "ssh"
+    host        = module.network.bastion_fip.address
+    user        = "ubuntu"
+    private_key = file("${var.key_name}.pem")
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "until [ -f /tmp/user_data_minikube_complete ]; do sleep 5; done",
+    ]
+  }
 }
