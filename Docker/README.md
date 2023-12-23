@@ -3,13 +3,13 @@ Docker je platforma, ktorá pomáha vývojárom budovať, zdieľať a spúšťa�
 
 ### Backend Dockerfile
 
-#### WORKDIR /app
-#### COPY --from=builder /build/main .
-#### EXPOSE 9080
-#### ENTRYPOINT ["./main"]
+## WORKDIR /app
+## COPY --from=builder /build/main .
+## EXPOSE 9080
+## ENTRYPOINT ["./main"]
 
 ### Frontend Dockerfile
 
-#### WORKDIR /app
-#### EXPOSE 8080
-#### ENTRYPOINT ["nginx -g 'daemon off;'"]
+## WORKDIR /app
+## EXPOSE 8080
+## ENTRYPOINT ["nginx -g 'daemon off;'"]
