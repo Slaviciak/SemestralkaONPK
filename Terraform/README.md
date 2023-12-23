@@ -1,4 +1,4 @@
-Terraform
+### Terraform
 
 Terraform je nástroj na infraštruktúru ako kód, ktorý umožňuje deklaratívne definovať a spravovať cloudové zdroje.
 
